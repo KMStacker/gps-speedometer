@@ -2,9 +2,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
+import { useKeepAwake } from 'expo-keep-awake';
 
 export default function App() {
+  useKeepAwake();
   const [speed, setSpeed] = useState<number | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +28,10 @@ export default function App() {
         },
         (location) => {
           const rawSpeed = location.coords.speed;
+          const rawAccuracy = location.coords.accuracy;
+
+          setAccuracy(rawAccuracy);
+
           if (rawSpeed !== null && rawSpeed > 0) {
             const speedKmh = rawSpeed * 3.6;
             setSpeed(speedKmh);
@@ -54,6 +61,9 @@ export default function App() {
             {speed !== null ? Math.round(speed) : '--'}
           </Text>
           <Text style={styles.unitText}>km/h</Text>
+          <Text style={styles.accuracyText}>
+            {accuracy !== null ? `Accuracy: ±${Math.round(accuracy)} m` : 'Searching GPS...'}
+          </Text>
         </View>
       )}
       <StatusBar style="light" />
@@ -81,6 +91,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#888888',
     marginTop: 8,
+  },
+  accuracyText: {
+    fontSize: 14,
+    color: '#d4cbcb',
+    marginTop: 24,
+    fontVariant: ['tabular-nums'],
   },
   errorText: {
     fontSize: 18,
