@@ -18,6 +18,8 @@ export default function App() {
   useKeepAwake();
   const [speed, setSpeed] = useState<number | null>(null);
   const [maxSpeed, setMaxSpeed] = useState<number>(0);
+  const [speedSum, setSpeedSum] = useState<number>(0);
+  const [speedCount, setSpeedCount] = useState<number>(0);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [showMore, setShowMore] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -50,6 +52,11 @@ export default function App() {
 
             if (rawAccuracy !== null && rawAccuracy <= 10) {
               setMaxSpeed((prevMax) => Math.max(prevMax, speedKmh));
+
+              if (speedKmh >= 1) {
+                setSpeedSum((prevSum) => prevSum + speedKmh);
+                setSpeedCount((prevCount) => prevCount + 1);
+              }
             }
           } else {
             setSpeed(0);
@@ -66,6 +73,14 @@ export default function App() {
       }
     };
   }, []);
+
+  const avgSpeed = speedCount > 0 ? speedSum / speedCount : 0;
+
+  function handleResetStats() {
+    setMaxSpeed(0);
+    setSpeedSum(0);
+    setSpeedCount(0);
+  }
 
   return (
     <View style={styles.container}>
@@ -107,14 +122,24 @@ export default function App() {
 
           {showMore && (
             <View style={styles.statsContainer}>
-              <Text style={styles.maxSpeedLabel}>MAX SPEED</Text>
-              <Text style={styles.maxSpeedValue}>{Math.round(maxSpeed)} km/h</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>MAX SPEED</Text>
+                  <Text style={styles.statValue}>{Math.round(maxSpeed)} km/h</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>AVG SPEED</Text>
+                  <Text style={styles.statValue}>{Math.round(avgSpeed)} km/h</Text>
+                </View>
+              </View>
+
               <Pressable
                 style={({ pressed }) => [
                   styles.resetButton,
                   pressed && styles.resetButtonPressed,
                 ]}
-                onPress={() => setMaxSpeed(0)}
+                onPress={handleResetStats}
               >
                 <Text style={styles.resetButtonText}>Reset</Text>
               </Pressable>
@@ -194,13 +219,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2a2a2a',
   },
-  maxSpeedLabel: {
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statItem: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: '#2e2e2e',
+  },
+  statLabel: {
     fontSize: 12,
     color: '#888888',
     letterSpacing: 1.5,
   },
-  maxSpeedValue: {
-    fontSize: 28,
+  statValue: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
     marginTop: 4,
