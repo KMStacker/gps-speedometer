@@ -67,7 +67,11 @@ export default function App() {
         <Text style={styles.errorText}>{errorMsg}</Text>
       ) : (
         <View style={styles.speedBox}>
-          <Text style={styles.speedText}>
+          <Text
+            style={styles.speedText}
+            numberOfLines={1} 
+            adjustsFontSizeToFit
+          >
             {speed !== null ? Math.round(speed) : '--'}
           </Text>
           <Text style={styles.unitText}>km/h</Text>
@@ -93,9 +97,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   speedText: {
-    fontSize: 96,
+    fontSize: 160,
     fontWeight: 'bold',
     color: '#ffffff',
+    fontVariant: ['tabular-nums'],
+    lineHeight: 170,
   },
   unitText: {
     fontSize: 24,
