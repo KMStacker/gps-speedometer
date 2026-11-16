@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
 
@@ -17,6 +17,7 @@ function getAccuracyColor(accuracy: number | null): string {
 export default function App() {
   useKeepAwake();
   const [speed, setSpeed] = useState<number | null>(null);
+  const [maxSpeed, setMaxSpeed] = useState<number>(0);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -45,6 +46,10 @@ export default function App() {
           if (rawSpeed !== null && rawSpeed > 0) {
             const speedKmh = rawSpeed * 3.6;
             setSpeed(speedKmh);
+
+            if (rawAccuracy !== null && rawAccuracy <= 10) {
+              setMaxSpeed((prevMax) => Math.max(prevMax, speedKmh));
+            }
           } else {
             setSpeed(0);
           }
@@ -85,6 +90,20 @@ export default function App() {
             <Text style={[styles.accuracyText, { color: getAccuracyColor(accuracy) }]}>
               {accuracy !== null ? `Accuracy: ±${Math.round(accuracy)} m` : 'Searching GPS...'}
             </Text>
+          </View>
+
+          <View style={styles.statsContainer}>
+            <Text style={styles.maxSpeedLabel}>MAX SPEED</Text>
+            <Text style={styles.maxSpeedValue}>{Math.round(maxSpeed)} km/h</Text>
+            <Pressable
+              style={({ pressed }) => [
+                styles.resetButton,
+                pressed && styles.resetButtonPressed,
+              ]}
+              onPress={() => setMaxSpeed(0)}
+            >
+              <Text style={styles.resetButtonText}>Reset</Text>
+            </Pressable>
           </View>
         </View>
       )}
@@ -131,6 +150,39 @@ const styles = StyleSheet.create({
   accuracyText: {
     fontSize: 14,
     fontVariant: ['tabular-nums'],
+  },
+  statsContainer: {
+    marginTop: 48,
+    alignItems: 'center',
+  },
+  maxSpeedLabel: {
+    fontSize: 12,
+    color: '#888888',
+    letterSpacing: 1.5,
+  },
+  maxSpeedValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 4,
+    fontVariant: ['tabular-nums'],
+  },
+  resetButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    backgroundColor: '#262626',
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+  },
+  resetButtonPressed: {
+    backgroundColor: '#3a3a3a',
+  },
+  resetButtonText: {
+    color: '#cccccc',
+    fontSize: 14,
+    fontWeight: '600',
   },
   errorText: {
     fontSize: 18,
