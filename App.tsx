@@ -75,9 +75,17 @@ export default function App() {
             {speed !== null ? Math.round(speed) : '--'}
           </Text>
           <Text style={styles.unitText}>km/h</Text>
-          <Text style={[styles.accuracyText, { color: getAccuracyColor(accuracy) }]}>
-            {accuracy !== null ? `Accuracy: ±${Math.round(accuracy)} m` : 'Searching GPS...'}
-          </Text>
+          <View style={styles.accuracyContainer}>
+            <View
+              style={[
+                styles.accuracyDot,
+                { backgroundColor: getAccuracyColor(accuracy) },
+              ]}
+            />
+            <Text style={[styles.accuracyText, { color: getAccuracyColor(accuracy) }]}>
+              {accuracy !== null ? `Accuracy: ±${Math.round(accuracy)} m` : 'Searching GPS...'}
+            </Text>
+          </View>
         </View>
       )}
       <StatusBar style="light" />
@@ -108,9 +116,20 @@ const styles = StyleSheet.create({
     color: '#888888',
     marginTop: 8,
   },
+  accuracyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  accuracyDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginRight: 8,
+  },
   accuracyText: {
     fontSize: 14,
-    marginTop: 24,
     fontVariant: ['tabular-nums'],
   },
   errorText: {
