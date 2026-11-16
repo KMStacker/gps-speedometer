@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -14,13 +14,38 @@ function getAccuracyColor(accuracy: number | null): string {
   return '#facc15';
 }
 
+function calculateDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const earthRadiusMeters = 6371000;
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusMeters * c;
+}
+
 export default function App() {
   useKeepAwake();
   const [speed, setSpeed] = useState<number | null>(null);
   const [maxSpeed, setMaxSpeed] = useState<number>(0);
   const [speedSum, setSpeedSum] = useState<number>(0);
   const [speedCount, setSpeedCount] = useState<number>(0);
+  const [distanceMeters, setDistanceMeters] = useState<number>(0);
   const [accuracy, setAccuracy] = useState<number | null>(null);
+  const lastCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
   const [showMore, setShowMore] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -41,25 +66,41 @@ export default function App() {
           distanceInterval: 1,
         },
         (location) => {
-          const rawSpeed = location.coords.speed;
-          const rawAccuracy = location.coords.accuracy;
+          const { speed: rawSpeed, accuracy: rawAccuracy, latitude, longitude } = location.coords;
 
           setAccuracy(rawAccuracy);
 
-          if (rawSpeed !== null && rawSpeed > 0) {
-            const speedKmh = rawSpeed * 3.6;
-            setSpeed(speedKmh);
+          const isAccurate = rawAccuracy !== null && rawAccuracy <= 10;
+          const speedKmh = rawSpeed !== null && rawSpeed > 0 ? rawSpeed * 3.6 : 0;
 
-            if (rawAccuracy !== null && rawAccuracy <= 10) {
+          setSpeed(speedKmh);
+
+          if (isAccurate) {
+            if (speedKmh > 0) {
               setMaxSpeed((prevMax) => Math.max(prevMax, speedKmh));
+            }
+            if (speedKmh > 1) {
+              setSpeedSum((prevSum) => prevSum + speedKmh);
+              setSpeedCount((prevCount) => prevCount + 1);
 
-              if (speedKmh >= 1) {
-                setSpeedSum((prevSum) => prevSum + speedKmh);
-                setSpeedCount((prevCount) => prevCount + 1);
+              if (lastCoordsRef.current !== null) {
+                const segmentMeters = calculateDistanceMeters(
+                  lastCoordsRef.current.latitude,
+                  lastCoordsRef.current.longitude,
+                  latitude,
+                  longitude
+                );
+
+                if (segmentMeters > 0 && segmentMeters < 500) {
+                  setDistanceMeters((prevDist) => prevDist + segmentMeters);
+                }
               }
+              lastCoordsRef.current = { latitude, longitude };
+            } else {
+              lastCoordsRef.current = null;
             }
           } else {
-            setSpeed(0);
+            lastCoordsRef.current = null;
           }
         }
       );
@@ -75,11 +116,17 @@ export default function App() {
   }, []);
 
   const avgSpeed = speedCount > 0 ? speedSum / speedCount : 0;
+  const formattedDistance =
+    distanceMeters < 1000
+      ? `${Math.round(distanceMeters)} m`
+      : `${(distanceMeters / 1000).toFixed(2)} km`;
 
   function handleResetStats() {
     setMaxSpeed(0);
     setSpeedSum(0);
     setSpeedCount(0);
+    setDistanceMeters(0);
+    lastCoordsRef.current = null;
   }
 
   return (
@@ -124,13 +171,18 @@ export default function App() {
             <View style={styles.statsContainer}>
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>MAX SPEED</Text>
+                  <Text style={styles.statLabel}>MAX</Text>
                   <Text style={styles.statValue}>{Math.round(maxSpeed)} km/h</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>AVG SPEED</Text>
+                  <Text style={styles.statLabel}>AVG</Text>
                   <Text style={styles.statValue}>{Math.round(avgSpeed)} km/h</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>TRIP</Text>
+                  <Text style={styles.statValue}>{formattedDistance}</Text>
                 </View>
               </View>
 
@@ -213,7 +265,8 @@ const styles = StyleSheet.create({
     marginTop: 24,
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
     borderRadius: 16,
     backgroundColor: '#1a1a1a',
     borderWidth: 1,
@@ -226,7 +279,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   statDivider: {
     width: 1,
@@ -234,12 +287,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#2e2e2e',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#888888',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
     marginTop: 4,
