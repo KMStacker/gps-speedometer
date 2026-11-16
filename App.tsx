@@ -4,6 +4,16 @@ import { StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
 
+function getAccuracyColor(accuracy: number | null): string {
+  if (accuracy === null || accuracy > 25) {
+    return '#f87171';
+  }
+  if (accuracy <= 10) {
+    return '#4ade80';
+  }
+  return '#facc15';
+}
+
 export default function App() {
   useKeepAwake();
   const [speed, setSpeed] = useState<number | null>(null);
@@ -61,7 +71,7 @@ export default function App() {
             {speed !== null ? Math.round(speed) : '--'}
           </Text>
           <Text style={styles.unitText}>km/h</Text>
-          <Text style={styles.accuracyText}>
+          <Text style={[styles.accuracyText, { color: getAccuracyColor(accuracy) }]}>
             {accuracy !== null ? `Accuracy: ±${Math.round(accuracy)} m` : 'Searching GPS...'}
           </Text>
         </View>
@@ -94,7 +104,6 @@ const styles = StyleSheet.create({
   },
   accuracyText: {
     fontSize: 14,
-    color: '#d4cbcb',
     marginTop: 24,
     fontVariant: ['tabular-nums'],
   },
