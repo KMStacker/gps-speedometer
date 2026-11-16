@@ -44,8 +44,10 @@ export default function App() {
   const [speedSum, setSpeedSum] = useState<number>(0);
   const [speedCount, setSpeedCount] = useState<number>(0);
   const [distanceMeters, setDistanceMeters] = useState<number>(0);
+  const [stops, setStops] = useState<number>(0);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const lastCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const isMovingRef = useRef<boolean>(false);
   const [showMore, setShowMore] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -76,10 +78,18 @@ export default function App() {
           setSpeed(speedKmh);
 
           if (isAccurate) {
+            if (speedKmh > 5) {
+              isMovingRef.current = true;
+            } else if (speedKmh < 1 && isMovingRef.current) {
+              setStops((prevStops) => prevStops + 1);
+              isMovingRef.current = false;
+            }
+
             if (speedKmh > 0) {
               setMaxSpeed((prevMax) => Math.max(prevMax, speedKmh));
             }
-            if (speedKmh > 1) {
+
+            if (speedKmh >= 1) {
               setSpeedSum((prevSum) => prevSum + speedKmh);
               setSpeedCount((prevCount) => prevCount + 1);
 
@@ -126,7 +136,9 @@ export default function App() {
     setSpeedSum(0);
     setSpeedCount(0);
     setDistanceMeters(0);
+    setStops(0);
     lastCoordsRef.current = null;
+    isMovingRef.current = false;
   }
 
   return (
@@ -171,18 +183,27 @@ export default function App() {
             <View style={styles.statsContainer}>
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>MAX</Text>
+                  <Text style={styles.statLabel}>MAX SPEED</Text>
                   <Text style={styles.statValue}>{Math.round(maxSpeed)} km/h</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>AVG</Text>
+                  <Text style={styles.statLabel}>AVG SPEED</Text>
                   <Text style={styles.statValue}>{Math.round(avgSpeed)} km/h</Text>
                 </View>
-                <View style={styles.statDivider} />
+              </View>
+
+              <View style={styles.statsHorizontalDivider} />
+
+              <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>TRIP</Text>
                   <Text style={styles.statValue}>{formattedDistance}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>STOPS</Text>
+                  <Text style={styles.statValue}>{stops}</Text>
                 </View>
               </View>
 
@@ -279,12 +300,19 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    paddingHorizontal: 12,
+    width: 120,
+    paddingVertical: 4,
   },
   statDivider: {
     width: 1,
     height: 36,
     backgroundColor: '#2e2e2e',
+  },
+  statsHorizontalDivider: {
+    width: '85%',
+    height: 1,
+    backgroundColor: '#2e2e2e',
+    marginVertical: 10,
   },
   statLabel: {
     fontSize: 11,
