@@ -19,6 +19,7 @@ export default function App() {
   const [speed, setSpeed] = useState<number | null>(null);
   const [maxSpeed, setMaxSpeed] = useState<number>(0);
   const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [showMore, setShowMore] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,19 +93,33 @@ export default function App() {
             </Text>
           </View>
 
-          <View style={styles.statsContainer}>
-            <Text style={styles.maxSpeedLabel}>MAX SPEED</Text>
-            <Text style={styles.maxSpeedValue}>{Math.round(maxSpeed)} km/h</Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.resetButton,
-                pressed && styles.resetButtonPressed,
-              ]}
-              onPress={() => setMaxSpeed(0)}
-            >
-              <Text style={styles.resetButtonText}>Reset</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.toggleButton,
+              pressed && styles.toggleButtonPressed,
+            ]}
+            onPress={() => setShowMore((prev) => !prev)}
+          >
+            <Text style={styles.toggleButtonText}>
+              {showMore ? 'Hide info' : 'Show more'}
+            </Text>
+          </Pressable>
+
+          {showMore && (
+            <View style={styles.statsContainer}>
+              <Text style={styles.maxSpeedLabel}>MAX SPEED</Text>
+              <Text style={styles.maxSpeedValue}>{Math.round(maxSpeed)} km/h</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.resetButton,
+                  pressed && styles.resetButtonPressed,
+                ]}
+                onPress={() => setMaxSpeed(0)}
+              >
+                <Text style={styles.resetButtonText}>Reset</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
       <StatusBar style="light" />
@@ -151,9 +166,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontVariant: ['tabular-nums'],
   },
+  toggleButton: {
+    marginTop: 32,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#1e1e1e',
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  toggleButtonPressed: {
+    backgroundColor: '#2e2e2e',
+  },
+  toggleButtonText: {
+    color: '#aaaaaa',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
   statsContainer: {
-    marginTop: 48,
+    marginTop: 24,
     alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
   },
   maxSpeedLabel: {
     fontSize: 12,
