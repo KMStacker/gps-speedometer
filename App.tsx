@@ -48,6 +48,7 @@ export default function App() {
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const lastCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
   const isMovingRef = useRef<boolean>(false);
+  const stopStartTimeRef = useRef<number | null>(null);
   const [showMore, setShowMore] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -73,24 +74,33 @@ export default function App() {
           setAccuracy(rawAccuracy);
 
           const isAccurate = rawAccuracy !== null && rawAccuracy <= 10;
-          const speedKmh = rawSpeed !== null && rawSpeed > 0 ? rawSpeed * 3.6 : 0;
+          const rawSpeedKmh = rawSpeed !== null && rawSpeed > 0 ? rawSpeed * 3.6 : 0;
+          const displaySpeedKmh = rawSpeedKmh < 2 ? 0 : rawSpeedKmh;
 
-          setSpeed(speedKmh);
+          setSpeed(displaySpeedKmh);
 
           if (isAccurate) {
-            if (speedKmh > 5) {
+            if (rawSpeedKmh > 5) {
               isMovingRef.current = true;
-            } else if (speedKmh < 1 && isMovingRef.current) {
-              setStops((prevStops) => prevStops + 1);
-              isMovingRef.current = false;
+              stopStartTimeRef.current = null;
+            } else if (rawSpeedKmh < 2.5 && isMovingRef.current) {
+              if (stopStartTimeRef.current === null) {
+                stopStartTimeRef.current = Date.now();
+              } else if (Date.now() - stopStartTimeRef.current >= 3000) {
+                setStops((prevStops) => prevStops + 1);
+                isMovingRef.current = false;
+                stopStartTimeRef.current = null;
+              }
+            } else if (rawSpeedKmh >= 2.5) {
+              stopStartTimeRef.current = null;
             }
 
-            if (speedKmh > 0) {
-              setMaxSpeed((prevMax) => Math.max(prevMax, speedKmh));
+            if (displaySpeedKmh > 0) {
+              setMaxSpeed((prevMax) => Math.max(prevMax, displaySpeedKmh));
             }
 
-            if (speedKmh >= 1) {
-              setSpeedSum((prevSum) => prevSum + speedKmh);
+            if (displaySpeedKmh >= 2 && isMovingRef.current) {
+              setSpeedSum((prevSum) => prevSum + displaySpeedKmh);
               setSpeedCount((prevCount) => prevCount + 1);
 
               if (lastCoordsRef.current !== null) {
@@ -139,6 +149,7 @@ export default function App() {
     setStops(0);
     lastCoordsRef.current = null;
     isMovingRef.current = false;
+    stopStartTimeRef.current = null;
   }
 
   return (
